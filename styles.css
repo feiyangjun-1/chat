@@ -1,0 +1,136 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    background-color: #f5f5f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.chat-container {
+    width: 100%;
+    max-width: 800px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+}
+
+header {
+    background-color: #4a89dc;
+    color: white;
+    text-align: center;
+    padding: 15px;
+}
+
+.chat-box {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: #f9f9f9;
+}
+
+.message {
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    border-radius: 18px;
+    max-width: 80%;
+    word-wrap: break-word;
+    position: relative;
+    clear: both;
+}
+
+.message.user {
+    background-color: #e6f2ff;
+    float: right;
+    border-bottom-right-radius: 5px;
+}
+
+.message.other {
+    background-color: #f0f0f0;
+    float: left;
+    border-bottom-left-radius: 5px;
+}
+
+.username {
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 0.8em;
+}
+
+.timestamp {
+    font-size: 0.7em;
+    color: #888;
+    margin-top: 5px;
+    text-align: right;
+}
+
+.user-input {
+    display: flex;
+    padding: 15px;
+    background-color: #fff;
+    border-top: 1px solid #eee;
+}
+
+#username {
+    width: 120px;
+    margin-right: 10px;
+}
+
+#message {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    outline: none;
+}
+
+#sendBtn {
+    padding: 0 20px;
+    background-color: #4a89dc;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+#sendBtn:hover {
+    background-color: #3b7dd8;
+}
+
+@media (max-width: 600px) {
+    .chat-container {
+        height: 90vh;
+        width: 95%;
+    }
+    
+    .user-input {
+        flex-direction: column;
+    }
+    
+    #username {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    #message {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    #sendBtn {
+        width: 100%;
+        margin-left: 0;
+    }
+}
