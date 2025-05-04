@@ -1,13 +1,12 @@
 // 初始化Firebase
 // 注意：这些配置将在Firebase设置部分获取
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDXbWap93nZD1Ja9pe-10oUEcig4MqvIkk",
+  authDomain: "chat-b98b5.firebaseapp.com",
+  projectId: "chat-b98b5",
+  storageBucket: "chat-b98b5.firebasestorage.app",
+  messagingSenderId: "459376694568",
+  appId: "1:459376694568:web:7adcb04b873b9c53e6ac1d"
 };
 
 firebase.initializeApp(firebaseConfig);
