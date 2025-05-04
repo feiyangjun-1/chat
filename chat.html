@@ -1,182 +1,119 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>微信式加密对话</title>
+    <title>智能金额加密工具</title>
+    <meta charset="utf-8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        body { font-family: "Helvetica Neue", Helvetica, Arial; margin: 0; background: #ededed; }
-        .container { max-width: 500px; margin: 20px auto; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        
-        /* 密码界面 */
-        .auth-box { padding: 40px 20px; text-align: center; }
-        .auth-input { margin: 15px 0; padding: 12px; width: 80%; border: 1px solid #ddd; border-radius: 5px; }
-        
-        /* 聊天界面 */
-        .chat-container { display: none; height: 80vh; }
-        .message-area { height: calc(100% - 60px); overflow-y: auto; padding: 10px; }
-        .input-area { border-top: 1px solid #e5e5e5; padding: 10px; }
-        
-        /* 消息气泡 */
-        .message { margin: 10px 0; clear: both; }
-        .message-content { max-width: 70%; padding: 8px 12px; border-radius: 5px; position: relative; }
-        .received { float: left; background: white; border: 1px solid #e5e5e5; }
-        .sent { float: right; background: #9eea6a; }
-        .time { font-size: 12px; color: #999; margin: 0 5px; }
-        
-        /* 功能按钮 */
-        .btn { background: #07c160; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-        .btn-settings { position: fixed; right: 20px; top: 10px; background: #ddd; color: #333; }
+        body { max-width: 600px; margin: 20px auto; padding: 20px; }
+        .input-group { margin-bottom: 15px; }
+        #amount { 
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #007bff;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        #preview { 
+            margin-top: 10px;
+            color: #666;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
-    <!-- 密码验证界面 -->
-    <div class="container auth-box" id="authBox">
-        <h2>安全验证</h2>
-        <input type="password" class="auth-input" id="inputPassword" placeholder="输入对话密码（初始123456）">
-        <button class="btn" onclick="verifyPassword()">进入对话</button>
+    <div class="input-group">
+        <input type="text" id="amount" 
+               placeholder="支持输入数字或中文大写（如：5000.00 或 伍仟元整）">
+        <div id="preview"></div>
+    </div>
+    <button onclick="encrypt()" style="width:100%;padding:12px">生成加密字符</button>
+    <div id="result" style="margin-top:20px;display:none">
+        <p>加密结果：<span id="encryptedResult"></span></p >
+        <button onclick="copyResult()">复制结果</button>
     </div>
 
-    <!-- 聊天主界面 -->
-    <div class="container chat-container" id="chatContainer">
-        <div class="message-area" id="messageArea"></div>
-        <div class="input-area">
-            <input type="text" id="inputMessage" placeholder="输入消息" style="width:75%; padding:8px;">
-            <button class="btn" onclick="sendMessage()">发送</button>
-        </div>
-    </div>
+    <script>
+        // 中文大写转数字
+        function chineseToNumber(chineseStr) {
+            const map = {
+                '零':0, '壹':1, '贰':2, '叁':3, '肆':4,
+                '伍':5, '陆':6, '柒':7, '捌':8, '玖':9,
+                '拾':10, '佰':100, '仟':1000, '万':10000, '亿':100000000
+            };
+            
+            let result = 0;
+            let temp = 0;
+            let section = 0;
+            
+            for(let char of chineseStr.replace(/元整?/g, '')){
+                const num = map[char];
+                if(num < 10){
+                    temp = num;
+                } else if(num >= 10){
+                    temp = temp !== 0 ? temp * num : num;
+                    if(num >= 10000){
+                        section += temp;
+                        result += section * num;
+                        section = 0;
+                        temp = 0;
+                    } else {
+                        section += temp;
+                        temp = 0;
+                    }
+                }
+            }
+            return result + section + temp;
+        }
 
-    <!-- 设置菜单 -->
-    <button class="btn btn-settings" onclick="showSettings()">⚙</button>
-    <div id="settingsMenu" style="display:none; position:fixed; right:20px; top:50px; background:white; padding:15px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
-        <h3>设置</h3>
-        <input type="password" id="newPassword" placeholder="新密码">
-        <button class="btn" onclick="changePassword()">修改密码</button>
-    </div>
+        // 实时输入验证
+        document.getElementById('amount').addEventListener('input', function(e){
+            const input = e.target.value;
+            let number = null;
+            
+            // 检测中文大写
+            if(/[壹贰叁肆伍陆柒捌玖拾佰仟萬亿]/test(input)){
+                number = chineseToNumber(input);
+                document.getElementById('preview').innerText = `检测到中文大写金额：${number ? number.toFixed(2) : '格式错误'}`;
+            } 
+            // 检测数字格式
+            else if(/(\d+([.,]\d+)?)/.test(input)){
+                number = parseFloat(input.replace(/[^\d.]/g, ''));
+                document.getElementById('preview').innerText = `标准金额格式：${number.toFixed(2)}`;
+            }
+        });
 
-<script>
-// 加密配置
-const INIT_PASSWORD = '123456';
-let currentPassword = INIT_PASSWORD;
-let chatHistory = [];
+        // 加密函数
+        function encrypt() {
+            let input = document.getElementById('amount').value;
+            let amount = null;
 
-// 初始化
-function init() {
-    // 尝试加载存储的密码
-    const savedPassword = localStorage.getItem('chatPassword');
-    if(savedPassword) currentPassword = savedPassword;
-    
-    // 加载历史记录
-    loadHistory();
-    
-    // 设置自动刷新
-    setInterval(loadHistory, 1000);
-}
+            // 自动转换输入内容
+            if(/[零壹贰叁肆伍陆柒捌玖拾佰仟萬亿]/.test(input)){
+                amount = chineseToNumber(input);
+            } else {
+                amount = parseFloat(input.replace(/[^\d.]/g, ''));
+            }
 
-// 密码验证
-function verifyPassword() {
-    const input = document.getElementById('inputPassword').value;
-    if(input === currentPassword) {
-        document.getElementById('authBox').style.display = 'none';
-        document.getElementById('chatContainer').style.display = 'block';
-        loadHistory();
-    } else {
-        alert('密码错误！');
-    }
-}
+            if(!amount || isNaN(amount)){
+                alert('请输入有效金额');
+                return;
+            }
 
-// 发送消息
-function sendMessage() {
-    const input = document.getElementById('inputMessage');
-    const text = input.value.trim();
-    if(!text) return;
-    
-    // 构建消息对象
-    const message = {
-        text: simpleEncrypt(text),
-        time: new Date().toLocaleTimeString(),
-        sent: true
-    };
-    
-    // 保存并显示
-    saveMessage(message);
-    input.value = '';
-    scrollToBottom();
-}
+            // 执行加密（使用AES）
+            const encrypted = CryptoJS.AES.encrypt(
+                amount.toFixed(2),
+                "your-secret-key-123"
+            ).toString();
 
-// 简单加密（演示用）
-function simpleEncrypt(text) {
-    return btoa(encodeURIComponent(text + currentPassword));
-}
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('encryptedResult').textContent = encrypted;
+        }
 
-// 解密消息
-function simpleDecrypt(encrypted) {
-    try {
-        const decoded = decodeURIComponent(atob(encrypted));
-        return decoded.replace(currentPassword, '');
-    } catch {
-        return "[加密消息]";
-    }
-}
-
-// 保存消息
-function saveMessage(message) {
-    chatHistory.push(message);
-    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-}
-
-// 加载历史
-function loadHistory() {
-    const saved = localStorage.getItem('chatHistory');
-    if(saved) {
-        chatHistory = JSON.parse(saved);
-        renderMessages();
-    }
-}
-
-// 渲染消息
-function renderMessages() {
-    const container = document.getElementById('messageArea');
-    container.innerHTML = chatHistory.map(msg => `
-        <div class="message">
-            <div class="${msg.sent ? 'sent' : 'received'} message-content">
-                <div>${simpleDecrypt(msg.text)}</div>
-                <div class="time">${msg.time}</div>
-            </div>
-        </div>
-    `).join('');
-}
-
-// 修改密码
-function changePassword() {
-    const newPwd = document.getElementById('newPassword').value;
-    if(!newPwd) return alert('请输入新密码');
-    
-    // 重新加密历史消息
-    const oldPassword = currentPassword;
-    currentPassword = newPwd;
-    chatHistory = chatHistory.map(msg => ({
-        ...msg,
-        text: simpleEncrypt(simpleDecrypt(msg.text).replace(oldPassword, ''))
-    }));
-    
-    // 保存设置
-    localStorage.setItem('chatPassword', newPwd);
-    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-    alert('密码修改成功！');
-}
-
-// 其他功能
-function scrollToBottom() {
-    const area = document.getElementById('messageArea');
-    area.scrollTop = area.scrollHeight;
-}
-
-function showSettings() {
-    document.getElementById('settingsMenu').style.display = 
-        document.getElementById('settingsMenu').style.display === 'none' ? 'block' : 'none';
-}
-
-// 启动程序
-window.onload = init;
-</script>
+        function copyResult() {
+            navigator.clipboard.writeText(document.getElementById('encryptedResult').textContent);
+            alert('已复制加密结果');
+        }
+    </script>
 </body>
 </html>
